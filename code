@@ -1,0 +1,103 @@
+# Creative AI Suite: Unified System for Story Generation, Music Composition, and Style Transfer
+
+import os
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Embedding, Input, GRU
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from PIL import Image
+import cv2
+import torch
+from torchvision import transforms
+from torchvision.models import vgg19
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
+import matplotlib.pyplot as plt
+
+# ----------------- Emotion-Based Story Generator -----------------
+
+def generate_story(mood):
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    model = GPT2LMHeadModel.from_pretrained("gpt2")
+    prompt = f"Write a short story based on the mood: {mood}."
+    inputs = tokenizer.encode(prompt, return_tensors="pt")
+    outputs = model.generate(inputs, max_length=300, num_return_sequences=1)
+    story = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return story
+
+# ----------------- Autonomous Music Composition AI -----------------
+
+def generate_music_sequence(style="classical", length=100):
+    notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
+    tokenizer = Tokenizer()
+    tokenizer.fit_on_texts(notes)
+    vocab_size = len(tokenizer.word_index) + 1
+    
+    model = Sequential([
+        Embedding(vocab_size, 10, input_length=10),
+        LSTM(64, return_sequences=True),
+        LSTM(64),
+        Dense(vocab_size, activation='softmax')
+    ])
+
+    generated = ['C'] * 10
+    for _ in range(length):
+        sequence = tokenizer.texts_to_sequences([generated[-10:]])
+        padded = pad_sequences(sequence, maxlen=10)
+        prediction = model.predict(padded, verbose=0)
+        next_index = np.random.choice(range(vocab_size), p=prediction[0])
+        next_note = [k for k, v in tokenizer.word_index.items() if v == next_index]
+        generated.append(next_note[0] if next_note else 'C')
+
+    return ' '.join(generated)
+
+# ----------------- Style-Aware Image Transformer -----------------
+
+def load_image(image_path, size=(512, 512)):
+    image = Image.open(image_path).convert("RGB")
+    transform = transforms.Compose([
+        transforms.Resize(size),
+        transforms.ToTensor(),
+        transforms.Lambda(lambda x: x.mul(255))
+    ])
+    return transform(image).unsqueeze(0)
+
+def transfer_style(content_img_path, style_img_path, output_path="output.jpg"):
+    content = load_image(content_img_path)
+    style = load_image(style_img_path)
+
+    vgg = vgg19(pretrained=True).features.eval()
+    for param in vgg.parameters():
+        param.requires_grad = False
+
+    generated = content.clone().requires_grad_(True)
+    optimizer = torch.optim.Adam([generated], lr=0.003)
+
+    for i in range(50):
+        optimizer.zero_grad()
+        loss = ((generated - content)**2).mean() + ((generated - style)**2).mean()
+        loss.backward()
+        optimizer.step()
+
+    final_img = generated.squeeze().detach().numpy().transpose(1, 2, 0).astype(np.uint8)
+    Image.fromarray(final_img).save(output_path)
+    return output_path
+
+# ----------------- Entry Point Example -----------------
+if __name__ == "__main__":
+    mood = "melancholy"
+    story = generate_story(mood)
+    print(f"\nGenerated Story for mood '{mood}':\n{story}\n")
+
+    music = generate_music_sequence(style="jazz")
+    print(f"\nGenerated Music Sequence:\n{music}\n")
+
+    # Replace with actual image paths
+    content_img = "content.jpg"
+    style_img = "style.jpg"
+    if os.path.exists(content_img) and os.path.exists(style_img):
+        result_path = transfer_style(content_img, style_img)
+        print(f"\nStyle transferred image saved to {result_path}")
+    else:
+        print("\nImage files not found. Please provide valid paths.")
