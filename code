@@ -15,7 +15,7 @@ from torchvision.models import vgg19
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import matplotlib.pyplot as plt
 
-# ----------------- Emotion-Based Story Generator -----------------
+
 
 def generate_story(mood):
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
@@ -26,7 +26,7 @@ def generate_story(mood):
     story = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return story
 
-# ----------------- Autonomous Music Composition AI -----------------
+
 
 def generate_music_sequence(style="classical", length=100):
     notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
@@ -52,7 +52,6 @@ def generate_music_sequence(style="classical", length=100):
 
     return ' '.join(generated)
 
-# ----------------- Style-Aware Image Transformer -----------------
 
 def load_image(image_path, size=(512, 512)):
     image = Image.open(image_path).convert("RGB")
@@ -84,7 +83,7 @@ def transfer_style(content_img_path, style_img_path, output_path="output.jpg"):
     Image.fromarray(final_img).save(output_path)
     return output_path
 
-# ----------------- Entry Point Example -----------------
+
 if __name__ == "__main__":
     mood = "melancholy"
     story = generate_story(mood)
@@ -93,7 +92,7 @@ if __name__ == "__main__":
     music = generate_music_sequence(style="jazz")
     print(f"\nGenerated Music Sequence:\n{music}\n")
 
-    # Replace with actual image paths
+
     content_img = "content.jpg"
     style_img = "style.jpg"
     if os.path.exists(content_img) and os.path.exists(style_img):
